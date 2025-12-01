@@ -11,5 +11,5 @@ App de comunicação segura (chat) para exercitar os conceitos de segurança com
     ```bash
     $ cd whatschat-flask
     $ pip install -r ./requirements.txt
-    $ python app.py
+    $ python run.py
     ```
