@@ -13,3 +13,9 @@ App de comunicação segura (chat) para exercitar os conceitos de segurança com
     $ pip install -r ./requirements.txt
     $ python run.py
     ```
+
+## Observações adicionais
++ Certificados autoassinados de exemplo para implementar https criados com o comando abaixo na pasta `assets/certs_example`:
+    ```bash
+    $ openssl req -x509 -nodes -newkey rsa:4096 -keyout server.key -out server.crt -days 3650 -subj "/C=BR/ST=DF/L=Brasilia/O=CIC_UnB/OU=ChatSeguro/CN=localhost"
+    ```
