@@ -56,3 +56,9 @@ def login_post():
     resp.set_cookie("token", token, httponly=True, secure=True, samesite='Lax')
 
     return resp
+
+@auth.route('/logout', methods=['GET'])
+def logout():
+    resp = jsonify({"message": "Logout realizado com sucesso"})
+    resp.set_cookie("token", "", expires=0, httponly=True, secure=True, samesite='Lax')
+    return resp

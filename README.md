@@ -1,8 +1,6 @@
 # WhatsChat - Trabalho de Segurança computacional
 App de comunicação segura (chat) para exercitar os conceitos de segurança computacional do semestre 2025.2 - UnB.
 
-![](assets/tela_login.png)
-
 ## Requisitos para execução
 + Orientações assumem (necessário) python e (opcional) um virtualizador de ambientes já instalado na máquina.
 
@@ -15,6 +13,11 @@ App de comunicação segura (chat) para exercitar os conceitos de segurança com
     $ pip install -r ./requirements.txt
     $ python run.py
     ```
+
+## Prévia de uso e telas
+![](assets/tela_login.png)
+![](assets/tela_home.png)
+
 
 ## Observações adicionais
 + Certificados autoassinados de exemplo para implementar https criados com o comando abaixo na pasta `assets/certs_example`:
