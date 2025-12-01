@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, current_app
 from app import db
 from app.models.user import User
+import jwt
 from jwt import ExpiredSignatureError, InvalidTokenError
 
 default_bp = Blueprint("default", __name__)
