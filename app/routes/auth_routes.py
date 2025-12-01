@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app import db
-from models import User 
+from app.models.user import User
 import bcrypt
 import jwt
 from datetime import datetime, timedelta, timezone
