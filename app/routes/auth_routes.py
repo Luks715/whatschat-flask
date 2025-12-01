@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, render_template
 from app import db
 from app.models.user import User
 import bcrypt
@@ -21,8 +21,12 @@ def register():
 
     return jsonify({"message": "user created"})
 
+@auth.route('/login', methods=['GET'])
+def login_get():
+    return render_template('login.html')
+
 @auth.route('/login', methods=['POST'])
-def login():
+def login_post():
     data = request.json
     username = data["username"]
     password = data["password"]
