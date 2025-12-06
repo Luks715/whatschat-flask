@@ -21,7 +21,8 @@ def all_users():
         for u in users:
             result.append({
                 "id": u.id,
-                "username": u.username
+                "username": u.username,
+                "isOnline": True
             })
         return jsonify(result)
     else:

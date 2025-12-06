@@ -19,7 +19,7 @@ def register():
 
     hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
 
-    user = User(username=username, password=hashed)
+    user = User(username=username, password=hashed, isOnline=False)
     db.session.add(user)
     db.session.commit()
 
@@ -42,6 +42,9 @@ def login_post():
 
     if not bcrypt.checkpw(password.encode(), user.password):
         return jsonify({"message": "Senha incorreta"}), 401
+    
+    user.isOnline = True
+    db.session.commit()
 
     token = jwt.encode(
         {
@@ -59,6 +62,24 @@ def login_post():
 
 @auth.route('/logout', methods=['GET'])
 def logout():
+    token = request.cookies.get("token")
+
+    if token:
+        try:
+            decoded = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
+            username = decoded.get("username")
+            user = User.query.filter_by(username=username).first()
+
+            if user:
+                user.isOnline = False
+                db.session.commit()
+
+        except jwt.ExpiredSignatureError:
+            pass
+        except jwt.InvalidTokenError:
+            pass
+
     resp = jsonify({"message": "Logout realizado com sucesso"})
     resp.set_cookie("token", "", expires=0, httponly=True, secure=True, samesite='Lax')
+
     return resp

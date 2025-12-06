@@ -1,8 +1,10 @@
 from flask import Flask
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
 
 db = SQLAlchemy()
+migrate = Migrate()
 socketio = SocketIO(cors_allowed_origins="*")
 
 def create_app():
@@ -14,6 +16,7 @@ def create_app():
 
     # Inicializar extensões
     db.init_app(app)
+    migrate.init_app(app, db)
     socketio.init_app(app)
 
     # Registrar rotas (blueprints)
