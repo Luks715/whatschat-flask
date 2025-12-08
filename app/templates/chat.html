@@ -1,18 +1,16 @@
-{% extends "base.html" %}
+{% extends "base.html" %} 
 
-{% block title %} - Home{% endblock %}
+{% block content %} 
+    <div class="chat-container"> 
+        <h2 id="chatTitle">Chat</h2> 
+        <ul id="messages"></ul> 
+        
+        <input id="msgInput" placeholder="Digite uma mensagem..." autocomplete="off"> 
+        <button id="btnSend">Enviar</button> 
+    </div> 
+{% endblock %} 
 
-{% block extra_css %}
-    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}"> -->
-{% endblock %}
-
-{% block content %}
-    <div class="chat-container">
-        <h2>Bem-vindo ao WhatsChat</h2>
-        <p>Escolha um chat para começar a conversar!</p>
-    </div>
-{% endblock %}
-
-{% block extra_js %}
-    <!-- <script src="{{ url_for('static', filename='js/chat.js') }}"></script> -->
+{% block extra_js %} 
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script> 
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script> 
 {% endblock %}
