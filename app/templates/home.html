@@ -1,37 +1,39 @@
-{% extends "base.html" %}
+{% extends "base.html" %} 
 
-{% block title %} - Home{% endblock %}
+{% block title %} - Home{% endblock %} 
 
-{% block extra_css %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
-{% endblock %}
+{% block extra_css %} 
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}"> 
+{% endblock %} 
 
-{% block content %}
+{% block content %} 
 
-    <div style="width: 100%; max-width: 1000px; margin: 2rem auto; padding: 0 1rem;">    
-        <!-- Cabeçalho com Logout -->
-        <header class="home-header">
-            <h2>WhatsChat - Usuários Online</h2>
-            <button id="btnLogout" class="btn-logout">Sair / Logout</button>
-        </header>
-        <!-- Área de Pesquisa -->
-        <div class="controls-area">
-            <input type="text" id="searchInput" placeholder="Pesquisar usuário por nome...">
-        </div>
-        <!-- Grid de Usuários (Preenchido via JS) -->
-        <div id="userGrid" class="user-grid">
-            <!-- Os cards serão injetados aqui -->
-            <p style="color: #888;">Carregando usuários...</p>
-        </div>
-        <!-- Paginação -->
-        <div class="pagination">
-            <button id="btnPrev">Anterior</button>
-            <span id="pageIndicator" style="display: flex; align-items: center; color: #888;">Página 1</span>
-            <button id="btnNext">Próximo</button>
-        </div>
-    </div>
-{% endblock %}
+    <div style="width: 100%; max-width: 1000px; margin: 2rem auto; padding: 0 1rem;"> 
+        <!-- Cabeçalho com Logout --> 
+        <header class="home-header"> 
+            <h2>WhatsChat - Usuários Online</h2> 
+            <button id="btnLogout" class="btn-logout">Sair / Logout</button> 
+        </header> 
+        
+        <!-- Área de Pesquisa --> 
+        <div class="controls-area"> 
+            <input type="text" id="searchInput" placeholder="Pesquisar usuário por nome..."> 
+        </div> 
+        
+        <!-- Grid de Usuários (Preenchido via JS) --> 
+        <div id="userGrid" class="user-grid"> 
+            <!-- Os cards serão injetados aqui --> 
+            <p style="color: #888;">Carregando usuários...</p> 
+        </div> 
+        <!-- Paginação --> 
+        <div class="pagination"> 
+            <button id="btnPrev">Anterior</button> 
+            <span id="pageIndicator" style="display: flex; align-items: center; color: #888;">Página 1</span> 
+            <button id="btnNext">Próximo</button> 
+        </div> 
+    </div> 
+{% endblock %} 
 
-{% block extra_js %}
-    <script src="{{ url_for('static', filename='js/home.js') }}"></script>
+{% block extra_js %} 
+    <script src="{{ url_for('static', filename='js/home.js') }}"></script> 
 {% endblock %}
