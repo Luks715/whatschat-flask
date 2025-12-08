@@ -13,17 +13,21 @@ def home():
 def all_users():
     token = get_token_from_request()
     if is_token_valid(token):
-        # SELECT * FROM users
-        users = User.query.all()
+
+        # buscar somente usuários online
+        online_users = User.query.filter_by(isOnline=True).all()
 
         # transformar em JSON
         result = []
-        for u in users:
+        for u in online_users:
             result.append({
                 "id": u.id,
                 "username": u.username,
-                "isOnline": True
+                "isOnline": bool(u.isOnline)
             })
+
         return jsonify(result)
+
     else:
         return jsonify({"message": "Unauthorized"}), 401
+
