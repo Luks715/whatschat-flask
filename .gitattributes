@@ -24,4 +24,4 @@ migrations/** text eol=lf
 *.gif  binary
 *.ico  binary
 *.pdf  binary
-*.db   binary   # sqlite nunca deve ser considerado texto
+*.db   binary 
