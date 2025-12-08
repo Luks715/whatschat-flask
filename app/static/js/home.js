@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const data = await response.json(); 
             allUsers = data; // Armazena 
-            // renderUsers(); // Renderiza a primeira vez 
+            renderUsers(); // Renderiza a primeira vez 
         } catch (error) { 
             userGrid.innerHTML = <p class="error-message" style="display:block">Erro ao carregar usuários: ${error.message}</p>; 
         } 
