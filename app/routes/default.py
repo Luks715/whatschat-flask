@@ -19,11 +19,12 @@ def is_token_valid(token):
     secret = current_app.config.get("SECRET_KEY")
     try:
         payload = jwt.decode(token, secret, algorithms=["HS256"])
-        return True
+        return payload
     except ExpiredSignatureError:
         return False
     except InvalidTokenError:
         return False
+
 
 @default_bp.route('/', methods=['GET'])
 def default():

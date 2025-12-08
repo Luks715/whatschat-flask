@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
     // Função Placeholder para futuro chat 
     window.startChat = (userId, username) => { 
-        window.location.href = `/chat?user=${userId}`; 
+        window.location.href = `/users/chat?user=${userId}`;
         //alert(`Implementar abertura de canal seguro com: ${username} (ID: ${userId})`); 
     }; 
             

@@ -1,6 +1,6 @@
+window.socket = io();
+
 document.addEventListener("DOMContentLoaded", async () => {
-    // 1. Conectar ao Socket.IO
-    const socket = io();
 
     // 2. Lê o ID do outro usuário pela query string
     const urlParams = new URLSearchParams(window.location.search);

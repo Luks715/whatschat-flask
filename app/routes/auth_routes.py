@@ -47,7 +47,8 @@ def login_post():
     db.session.commit()
 
     token = jwt.encode(
-        {
+        {   
+            "user_id": user.id,
             "username": user.username,
             "exp": datetime.now(timezone.utc) + timedelta(hours=1)
         },
@@ -67,8 +68,8 @@ def logout():
     if token:
         try:
             decoded = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
-            username = decoded.get("username")
-            user = User.query.filter_by(username=username).first()
+            user_id = decoded.get("user_id")
+            user = User.query.get(user_id)
 
             if user:
                 user.isOnline = False
