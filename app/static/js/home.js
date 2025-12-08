@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
             allUsers = data; // Armazena 
             renderUsers(); // Renderiza a primeira vez 
         } catch (error) { 
-            userGrid.innerHTML = <p class="error-message" style="display:block">Erro ao carregar usuários: ${error.message}</p>; 
+            userGrid.innerHTML = `<p class="error-message" style="display:block">Erro ao carregar usuários: ${error.message}</p>`; 
         } 
     } 
     
@@ -78,10 +78,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 `; 
                 userGrid.appendChild(card); 
             }); 
-        } 
+        }
+         
             
         // D. Atualiza Controles de Paginação 
-        pageIndicator.innerText = `Página ${currentPage} de ${totalPages}; btnPrev.disabled = currentPage === 1`; 
+        pageIndicator.innerText = `Página ${currentPage} de ${totalPages}`;
+        btnPrev.disabled = (currentPage === 1);
         btnNext.disabled = currentPage === totalPages; 
     } 
         
