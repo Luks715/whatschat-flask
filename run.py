@@ -35,3 +35,6 @@ if __name__ == "__main__":
 
     # Executa o Flask + SocketIO
     socketio.run(app, debug=True, host='0.0.0.0', port=port)
+    # execução em localhost (ignorando ngrok)
+    #socketio.run(app, debug=True, host='0.0.0.0', port=port, ssl_context=ssl_context)
+
