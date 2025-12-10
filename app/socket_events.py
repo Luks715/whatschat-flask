@@ -2,38 +2,6 @@ from flask_socketio import emit, join_room, leave_room, rooms
 from flask import request
 from app import socketio
 
-# Evento: quando um cliente conecta
-@socketio.on("connect")
-def on_connect():
-    print("Cliente conectado:", request.sid)
-    emit("connected", {"message": "Bem-vindo!"})
-
-# Evento: quando o cliente desconecta
-@socketio.on("disconnect")
-def on_disconnect():
-    print("Cliente saiu:", request.sid)
-    
-@socketio.on('join')
-def on_join(data):
-    username = data['username']
-    room = data['room']
-    join_room(room)
-    emit(username + ' has entered the room.', to=room)
-
-@socketio.on('leave')
-def on_leave(data):
-    username = data['username']
-    room = data['room']
-    leave_room(room)
-    emit(username + ' has left the room.', to=room)
-
-# Evento: quando um cliente envia uma mensagem
-@socketio.on("mensagem")
-def on_mensagem(data):
-    destino = data["to"]
-    emit("mensagem", data, to=destino)
-
-
 # rooms_messages["room_1_5"] = [(1, "Oi"), (5, "Olá"), ...]
 rooms_messages = {}
 
@@ -96,7 +64,12 @@ def on_leave(data):
 def send_message(data):
     sender = int(data["sender"])
     receiver = int(data["receiver"])
-    msg = data["message"]
+
+    #msg = data["message"] <--- Agora não estamos mais enviando a mensagem plana
+
+    ciphertext = data["ciphertext"]  # mensagem criptografada pela chave do DH
+    iv = data["iv"]                  # Initialization Vector
+    mac = data["mac"]                # HMAC da mensagem
 
     room = build_room_name(sender, receiver)
 
@@ -104,13 +77,40 @@ def send_message(data):
     if room not in rooms_messages:
         rooms_messages[room] = []
 
-    rooms_messages[room].append((sender, msg))
+    rooms_messages[room].append((sender, ciphertext))
 
-    print(f"[{room}] {sender}: {msg}")
+    print(f"[{room}] (encrypted) {sender}: {ciphertext}")
+
 
     # Emitir a mensagem para os usuários da sala
     emit(
         "receive_message",
-        {"sender": sender, "message": msg},
+        #{"sender": sender, "message": msg},
+        {
+            "sender": sender,
+            "ciphertext": ciphertext,
+            "iv": iv,
+            "mac": mac
+        },
         room=room
+    )
+
+#========== EVENTO PARA CONFIDENCIALIDADE E INTEGRIDADE DAS MENSAGENS ==================
+
+@socketio.on("send_dh_public_key")
+def send_dh_public_key(data):
+    sender = int(data["sender"])
+    receiver = int(data["receiver"])
+    dh_public_key = data["dh_public_key"]
+
+    room = build_room_name(sender, receiver)
+
+    emit(
+        "dh_public_key", 
+        {   
+            "sender": sender,
+            "dh_public_key": dh_public_key,
+        },
+        room=room,
+        include_self=False
     )
