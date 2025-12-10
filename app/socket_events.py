@@ -94,8 +94,8 @@ def on_leave(data):
 
 @socketio.on("send_message")
 def send_message(data):
-    sender = int(data["sender_id"])
-    receiver = int(data["receiver_id"])
+    sender = int(data["sender"])
+    receiver = int(data["receiver"])
     msg = data["message"]
 
     room = build_room_name(sender, receiver)

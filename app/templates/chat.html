@@ -1,13 +1,32 @@
 {% extends "base.html" %} 
 
+{% block title %} - Chat with {{other_username}} {% endblock %} 
+
+{% block extra_css %} 
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}"> 
+{% endblock %} 
+
+
 {% block content %} 
-    <div class="chat-container"> 
-        <h2 id="chatTitle">Chat</h2> 
-        <ul id="messages"></ul> 
+    <div class="chat-wrapper">
         
-        <input id="msgInput" placeholder="Digite uma mensagem..." autocomplete="off"> 
-        <button id="btnSend">Enviar</button> 
-    </div> 
+        <header class="chat-header">
+            <div>
+                <h2>Chat Seguro</h2>
+                <small style="color: #888;">Conectado com {{ other_username }}</small>
+            </div>
+            <a href="/" class="btn-back">Voltar</a>
+        </header>
+
+        <ul id="messages">
+            </ul>
+
+        <div class="input-area">
+            <input id="msgInput" type="text" placeholder="Digite sua mensagem segura..." autocomplete="off">
+            <button id="btnSend">Enviar</button>
+        </div>
+
+    </div>
 {% endblock %} 
 
 {% block extra_js %} 
