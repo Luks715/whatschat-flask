@@ -38,7 +38,10 @@ App de comunicação segura (chat) para exercitar os conceitos de segurança com
 
 ## Prévia de uso e telas
 ![](assets/tela_login.png)
+
 ![](assets/tela_home.png)
+
+![](assets/chat1.png)
 
 
 ## Observações adicionais
