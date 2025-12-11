@@ -2,6 +2,8 @@ from flask_socketio import emit, join_room, leave_room, rooms
 from flask import request
 from app import socketio
 
+active_users_in_room = {}
+
 # rooms_messages["room_1_5"] = [(1, "Oi"), (5, "Olá"), ...]
 rooms_messages = {}
 
@@ -19,24 +21,32 @@ def on_disconnect():
 
 @socketio.on("join")
 def join_room_event(data):
-    user1_id = int(data["user1_id"])
-    user2_id = int(data["user2_id"])
+    user1_id = int(data["user1_id"])   # quem está entrando
+    user2_id = int(data["user2_id"])   # interlocutor
 
     room = build_room_name(user1_id, user2_id)
 
-    # Cria o histórico se não existir
+    # Cria histórico da sala se não existir
     if room not in rooms_messages:
         rooms_messages[room] = []
 
+    # Garante que exista o registro de usuários ativos
+    if room not in active_users_in_room:
+        active_users_in_room[room] = set()
+
+    # Entra na sala
     join_room(room)
+    active_users_in_room[room].add(user1_id)
 
     print(f"Usuário {user1_id} entrou na sala {room}")
 
-    # Enviar histórico existente para o usuário que acabou de entrar
-    emit("load_history", rooms_messages[room])
+    # Só quando AMBOS estiverem na sala enviamos load_history
+    if active_users_in_room[room] == {user1_id, user2_id} or \
+       active_users_in_room[room] == {user2_id, user1_id}:
 
-    # Notifica todos na sala
-    emit("user_joined", {"room": room, "user_id": user1_id}, room=room)
+        print(f"Ambos os usuários estão presentes em {room}. Enviando load_history.")
+        emit("load_history", rooms_messages.get(room, []), room=room)
+
 
 @socketio.on("leave")
 def on_leave(data):
@@ -65,8 +75,6 @@ def send_message(data):
     sender = int(data["sender"])
     receiver = int(data["receiver"])
 
-    #msg = data["message"] <--- Agora não estamos mais enviando a mensagem plana
-
     ciphertext = data["ciphertext"]  # mensagem criptografada pela chave do DH
     iv = data["iv"]                  # Initialization Vector
     mac = data["mac"]                # HMAC da mensagem
@@ -81,11 +89,9 @@ def send_message(data):
 
     print(f"[{room}] (encrypted) {sender}: {ciphertext}")
 
-
     # Emitir a mensagem para os usuários da sala
     emit(
         "receive_message",
-        #{"sender": sender, "message": msg},
         {
             "sender": sender,
             "ciphertext": ciphertext,
@@ -106,7 +112,7 @@ def send_dh_public_key(data):
     room = build_room_name(sender, receiver)
 
     emit(
-        "dh_public_key", 
+        "receive_dh_public_key", 
         {   
             "sender": sender,
             "dh_public_key": dh_public_key,

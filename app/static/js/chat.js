@@ -1,11 +1,13 @@
 // static/js/chat.js
-// Responsabilidade: lógica de envio/recebimento (Socket.IO, join, send/receive, lifecycle)
-// Depende de window.ChatUI exposto por chat_style.js
+// Lógica: Socket.IO, handshake ECDH, criptografia AES-GCM + HMAC
+// Depende de window.ChatUI (UI) e window.ChatCrypto (criptografia)
 
 window.socket = io();
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // 1) Lê o ID do outro usuário pela query string
+  // =========================================================
+  // 1) Obter IDs
+  // =========================================================
   const urlParams = new URLSearchParams(window.location.search);
   const otherUserId = urlParams.get("user");
 
@@ -14,62 +16,193 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // 2) Buscar o ID do usuário logado (via fetch /users/me)
   const response = await fetch("/users/me");
   if (!response.ok) {
-    alert("Erro ao obter informações do usuário.");
+    alert("Erro ao obter informações do usuário logado.");
     return;
   }
   const me = await response.json();
   const myId = me.id;
 
-  // 3) Entrar na sala usando seu evento "join"
+  // =========================================================
+  // 2) Entrar na sala
+  // =========================================================
   socket.emit("join", {
     user1_id: myId,
     user2_id: Number(otherUserId)
   });
 
-  //==============================================================
-  // REMOVER ISSO AQUI DEPOIS DE IMPLEMENTAR O HMAC
-  //==========================================================
-  window.ChatUI.enableChatUI();
+  // UI começa desabilitada em chat_style.js
+  // Espera handshake concluir para habilitar
 
-  // Exponha a função sendMessage globalmente para que o UI (chat_style.js) a invoque
-  window.sendMessage = function () {
-    // Usa ChatUI para ler/limpar o input (UI responsibility)
-    const msg = (window.ChatUI && typeof window.ChatUI.getAndClearInput === "function")
-      ? window.ChatUI.getAndClearInput()
-      : "";
+  // =========================================================
+  // 3) Gerar par ECDH local
+  // =========================================================
+  console.log("Gerando par DH local...");
+  const myDH = await ChatCrypto.generateDHKeyPair();
+  const myPublicKeyB64 = await ChatCrypto.exportDHPublicKeyBase64(myDH.publicKey);
 
-    if (!msg || !msg.trim()) return;
+  // Armazena estado E2EE na janela
+  window.E2EE = {
+    myId,
+    otherUserId: Number(otherUserId),
+    myDH,
+    myPublicKeyB64,
+    otherPublicKey: null,
+    aesKey: null,
+    hmacKey: null,
 
-    // Envia para o servidor (mensagem em plaintext por enquanto; mais tarde substituiremos pela criptografia)
-    socket.emit("send_message", {
-      sender: myId,
-      receiver: Number(otherUserId),
-      message: msg
-    });
+    // flags de controle
+    myKeySent: false,
+    theirKeyReceived: false,
+    keysDerived: false
   };
 
-  // Handler para mensagens recebidas (apenas lógica: delega render para ChatUI)
-  socket.on("receive_message", (data) => {
-    // data esperado: { sender, message } (plaintext) OR encrypted object later
-    if (window.ChatUI && typeof window.ChatUI.appendMessage === "function") {
-      // appendMessage espera (data, myId)
-      window.ChatUI.appendMessage(data, myId);
-    } else {
-      console.warn("ChatUI not available to append message");
+  // =========================================================
+  // Listener: receber DH público do interlocutor
+  // (registra antes de enviar nossa chave)
+  // =========================================================
+  socket.on("receive_dh_public_key", async (data) => {
+    console.log("receive_dh_public_key evento:", data);
+    const sender = data.sender;
+    const remoteKeyB64 = data.dh_public_key;
+
+    // Ignore echoes of our own send (server may retransmit)
+    if (sender === window.E2EE.myId) return;
+
+    // If keys already derived, ignore subsequent DH public keys
+    if (window.E2EE.keysDerived) {
+      console.log("Chaves já derivadas — ignorando chave pública adicional.");
+      window.E2EE.theirKeyReceived = true;
+      return;
+    }
+
+    console.log("Recebi chave pública DH do outro usuário.");
+
+    // Import remote public key
+    let remoteKey;
+    try {
+      remoteKey = await ChatCrypto.importDHPublicKeyBase64(remoteKeyB64);
+    } catch (err) {
+      console.error("Erro ao importar chave pública remota:", err);
+      return;
+    }
+
+    window.E2EE.otherPublicKey = remoteKey;
+    window.E2EE.theirKeyReceived = true;
+
+    // If for some reason we never sent our key (shouldn't happen normally),
+    // send it once now to ensure both sides have each other's public.
+    if (!window.E2EE.myKeySent) {
+      console.log("Ainda não havia enviado minha chave — reenviando agora (uma vez).");
+      console.log("Emitindo send_dh_public_key ->", window.E2EE.myPublicKeyB64.slice(0, 40));
+      socket.emit("send_dh_public_key", {
+        sender: window.E2EE.myId,
+        receiver: window.E2EE.otherUserId,
+        dh_public_key: window.E2EE.myPublicKeyB64
+      });
+      window.E2EE.myKeySent = true;
+    }
+
+    // Derive session keys once
+    try {
+      console.log("Derivando chaves AES/HMAC via ECDH...");
+      const { K_enc, K_mac } = await ChatCrypto.deriveSessionKeysFromPeer(
+        window.E2EE.myDH.privateKey,
+        remoteKey
+      );
+
+      window.E2EE.aesKey = K_enc;
+      window.E2EE.hmacKey = K_mac;
+      window.E2EE.keysDerived = true;
+
+      console.log("Handshake concluído. Criptografia ponta a ponta habilitada.");
+      window.ChatUI.enableChatUI();
+    } catch (err) {
+      console.error("Erro ao derivar chaves de sessão:", err);
     }
   });
 
-  // 7. Quando o usuário fechar a aba ou sair da página → leave
-  window.addEventListener("beforeunload", () => {
-    socket.emit("leave", {
-      username: me.username || "", // seu handler usa username
-      room: ""                     // opcional — não é necessário porque build_room_name pode reconstruir
-    });
+  // =========================================================
+  // Listener: load_history — só após isso enviamos nossa DH pública
+  // (load_history confirma que o servidor nos colocou na sala)
+  // =========================================================
+  socket.on("load_history", (history) => {
+    console.log("load_history recebido — entramos na sala, podemos enviar DH público.");
+
+    if (!window.E2EE.myKeySent) {
+      socket.emit("send_dh_public_key", {
+        sender: window.E2EE.myId,
+        receiver: window.E2EE.otherUserId,
+        dh_public_key: window.E2EE.myPublicKeyB64
+      });
+      window.E2EE.myKeySent = true;
+    }
   });
 
-  // Optionally allow chat.js to enable UI after any handshake completes:
-  // Example usage elsewhere: window.ChatUI.enableChatUI();
+  // =========================================================
+  // 4) Enviar mensagem criptografada
+  // =========================================================
+  window.sendMessage = async function () {
+    if (!window.E2EE.aesKey || !window.E2EE.hmacKey) {
+      alert("Aguardando conclusão do handshake seguro...");
+      return;
+    }
+
+    const plaintext = window.ChatUI.getAndClearInput();
+    if (!plaintext.trim()) return;
+
+    const encrypted = await ChatCrypto.encryptMessage(
+      window.E2EE.aesKey,
+      window.E2EE.hmacKey,
+      plaintext
+    );
+
+    socket.emit("send_message", {
+      sender: window.E2EE.myId,
+      receiver: window.E2EE.otherUserId,
+      ciphertext: encrypted.ciphertext,
+      iv: encrypted.iv,
+      mac: encrypted.mac
+    });
+  };
+
+  // =========================================================
+  // 5) Receber mensagem criptografada
+  // =========================================================
+  socket.on("receive_message", async (data) => {
+    if (!window.E2EE.aesKey || !window.E2EE.hmacKey) {
+      console.warn("Mensagem recebida antes do handshake; ignorada.");
+      return;
+    }
+
+    let plaintext = "";
+    try {
+      plaintext = await ChatCrypto.decryptMessage(
+        window.E2EE.aesKey,
+        window.E2EE.hmacKey,
+        data.ciphertext,
+        data.iv,
+        data.mac
+      );
+    } catch (err) {
+      console.error("Erro ao verificar integridade ou descriptografar:", err);
+      return;
+    }
+
+    window.ChatUI.appendMessage(
+      { sender: data.sender, message: plaintext },
+      window.E2EE.myId
+    );
+  });
+
+  // =========================================================
+  // 6) Evento leave
+  // =========================================================
+  window.addEventListener("beforeunload", () => {
+    socket.emit("leave", {
+      user_id: window.E2EE.myId,
+      other_id: window.E2EE.otherUserId
+    });
+  });
 });
